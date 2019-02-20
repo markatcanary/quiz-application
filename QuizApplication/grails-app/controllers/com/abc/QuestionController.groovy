@@ -1,7 +1,6 @@
 package com.abc
 
 import grails.converters.JSON
-import groovy.json.JsonSlurper
 
 class QuestionController {
 
@@ -80,7 +79,10 @@ class QuestionController {
         quizQuestion.isQuestionActive = isQuestionActive
         quizQuestion.question = question
         quizQuestion.questionType = QuizQuestion.QuestionType.valueOf(questionType)
-        ArrayList<QuizQuestionOption> quizQuestionOptionList = new ArrayList<QuizQuestionOption>()
+
+        QuizQuestionOption answerOption = new QuizQuestionOption(option:getStringProperty(jsonObj, "answer"))
+        quizQuestion.answer = answerOption
+                ArrayList<QuizQuestionOption> quizQuestionOptionList = new ArrayList<QuizQuestionOption>()
         optionsList.each{
             def options = inputQuizQuestionOptionsCmd(it)
             quizQuestionOptionList.add(options)

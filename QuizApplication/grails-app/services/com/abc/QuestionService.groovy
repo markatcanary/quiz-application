@@ -52,7 +52,10 @@ class QuestionService {
         }
         quizByTenant.addToQuizQuestions(quizQuestion)
         tenant.addToQuiz(quizByTenant)
+        QuizQuestionOption answerOption = quizQuestionInput.answer
         try {
+
+            quizQuestion.answer = answerOption
             quizQuestion.save()
             result = quizService.convertToQuestionCmd(quizQuestion)
         } catch (ValidationException ve) {
