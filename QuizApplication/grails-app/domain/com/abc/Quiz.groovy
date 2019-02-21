@@ -9,6 +9,7 @@ class Quiz {
     }
 
     String name
+
     Date dateCreated
     Date lastUpdated
     boolean isQuizActive = true
