@@ -1,125 +1,104 @@
 package com.abc
 
 import grails.transaction.Transactional
-import grails.validation.ValidationException
 
 @Transactional
 class QuizService {
+  def quizQuestionService
 
-    def getQuizList(String include, Tenant tenant) {
-        def quizList = getQuizListByCondition(include, tenant).collect{
-            convertToQuizCmd(it)
+  def getQuiz(def guId, Tenant tenant) throws Exception {
+    if(!guId) {
+      throw new Exception("no quiz found")
+    }
+    def quiz = Quiz.findByIdAndTenant(guId, tenant)
+    if(quiz) {
+      throw new Exception("no quiz found")
+    }
+    quiz
+  }
+  def getQuizList(String include, Tenant tenant) {
+    def quizList = getQuizListByCondition(include, tenant).collect {
+      convertToListCmd(it)
+    }
+    return quizList
+  }
+
+  def getQuizListByCondition(String include, Tenant tenant) {
+    boolean isConditionAbsent = include != null && include == "all"
+    boolean isQuizInActive = !isConditionAbsent && include == "inactive"
+    return getQuizByCriteria(isConditionAbsent, isQuizInActive, tenant)
+  }
+
+  def getQuizByCriteria(boolean isConditionAbsent, boolean isQuizInActive, Tenant tenant) {
+    def c = Quiz.createCriteria()
+    def result = c.list {
+      and {
+        eq("tenant", tenant)
+        if (!isConditionAbsent) {
+          eq("isQuizActive", !isQuizInActive)
         }
-        return quizList
+      }
     }
+    result
+  }
 
-    def getQuizListByCondition(String include, Tenant tenant){
-        boolean isConditionAbsent = include!=null && include == "all"
-        boolean isQuizInActive = !isConditionAbsent && include == "inactive"
-        return getQuizByCriteria(isConditionAbsent, isQuizInActive, tenant)
-    }
+  def getQuizDetails(long quizId, Tenant tenant) {
+    Quiz quiz = Quiz.findByIdAndTenant(quizId, tenant)
+    convertToQuizDetailCmd(quiz)
+  }
 
-    def getQuizByCriteria(boolean isConditionAbsent, boolean isQuizInActive, Tenant tenant){
-        def c = Quiz.createCriteria()
-        def result = c.list {
-            and {
-                eq("tenant", tenant)
-                if(!isConditionAbsent){
-                    eq("isQuizActive", !isQuizInActive)
-                }
-            }
-        }
-        return result
-    }
+  def createQuiz(InputQuizCmd cmd, Tenant tenant) throws Exception {
+    Quiz quiz = new Quiz(name: cmd.name, desc: cmd.desc, tenant: tenant)
+    quiz.save()
+    convertToListCmd(quiz)
+  }
 
-    def getQuizById(long quizId, Tenant tenant) {
-        Quiz quiz = Quiz.findByIdAndTenant(quizId, tenant)
-        def result =  convertToQuizCmdById(quiz)
-        return result
-    }
+  def updateQuiz(Quiz quiz, InputQuizCmd cmd) throws Exception {
+    quiz.name = cmd.name
+    quiz.desc = cmd.desc
+    quiz.isActive = cmd.isActive
+    quiz.save()
+    convertToListCmd(quiz)
+  }
 
-    def createQuiz(String quizName, Tenant tenant) throws Exception{
-        Quiz quiz = new Quiz(name:quizName, tenant: tenant, dateCreated: new Date(), lastUpdated: new Date())
-        def result
-        try {
-            quiz.save()
-            result =  convertToQuizCmd(quiz)
-        } catch (ValidationException ve) {
-            def msg = ve.message
-            throw new Exception(msg)
-        }
-        return result
-    }
+  def deleteQuiz(Quiz quiz) {
+    quiz.isActive = false
+    quiz.save()
+    convertToListCmd(quiz)
+  }
 
-    def updateQuiz(InputQuizCmd quizCommand, Tenant tenant) throws  Exception{
-        def updateResponse
-        Quiz quiz = Quiz.findByIdAndTenant(Long.valueOf(quizCommand.guId), tenant)
-        quiz.name = quizCommand.name
-        try{
-            updateResponse = quiz.save()
-        } catch (ValidationException ve) {
-            def msg = ve.message
-            throw new Exception(msg)
-        }
-        return updateResponse!=null ? "Quiz updated successfully" : "Quiz not updated, please try again"
-    }
+  def buildInputQuizCmd(def jsonObj) {
+    InputQuizCmd cmd = new InputQuizCmd()
+    cmd.name = jsonObj.name
+    cmd.desc = jsonObj.desc
+    cmd.isActive = CanaryUtils.getBooleanProp(jsonObj, "isActive") //convert this boolean later
+    cmd
+  }
 
-    def deleteQuiz(InputQuizCmd quizCommand, Tenant tenant){
-        def deleteResponse
-        Quiz quiz = Quiz.findByIdAndTenant(Long.valueOf(quizCommand.guId), tenant)
-        quiz.isQuizActive = false
-        try{
-            deleteResponse = quiz.save()
-        } catch (ValidationException ve) {
-            def msg = ve.message
-            throw new Exception(msg)
-        }
-        return deleteResponse!=null ? "Quiz deleted successfully" : "Quiz not deleted, please try again"
-    }
+  def convertToListCmd(Quiz quiz) {
+    QuizListCmd quizListCmd = new QuizListCmd()
+    quizListCmd.guId = quiz.id
+    quizListCmd.name = quiz.name
+    quizListCmd.desc = quiz.desc
+    quizListCmd.isActive = quiz.isActive
+    quizListCmd.dateCreated = CanaryUtils.toEpoch(quiz.dateCreated)
+    quizListCmd.lastUpdated = CanaryUtils.toEpoch(quiz.lastUpdated)
+    quizListCmd
+  }
 
-    def convertToQuizCmd(Quiz quiz) {
-        QuizResultCmd quizResultCmd = new QuizResultCmd()
-        quizResultCmd.guId = quiz.id
-        quizResultCmd.name = quiz.name
-        quizResultCmd.createdDate = quiz.dateCreated
-        quizResultCmd.updateDate = quiz.lastUpdated
-        quizResultCmd.isQuizActive = quiz.isQuizActive
-        return quizResultCmd
-    }
+  def convertToQuizDetailCmd(Quiz quiz) {
+    QuizDetailCmd quizDetailCmd = new QuizDetailCmd()
+    quizDetailCmd.guId = quiz.id
+    quizDetailCmd.name = quiz.name
+    quizDetailCmd.desc = quiz.desc
+    quizDetailCmd.isActive = quiz.isActive
 
-    def convertToQuizCmdById(Quiz quiz) {
-        QuizResultCmdById quizResultCmdById = new QuizResultCmdById()
-        quizResultCmdById.guId = quiz.id
-        quizResultCmdById.name = quiz.name
-        quizResultCmdById.questionList = quiz.quizQuestions.collect {
-            convertToQuestionCmd(it)
-        }
-        quizResultCmdById.createdDate = quiz.dateCreated
-        quizResultCmdById.updateDate = quiz.lastUpdated
-        quizResultCmdById.isQuizActive = quiz.isQuizActive
-        return quizResultCmdById
+    quizDetailCmd.questionList = quiz.quizQuestions.collect {
+      quizQuestionService.convertToQuestionCmd(it)
     }
-
-    def convertToQuestionCmd(QuizQuestion quizQuestion){
-        QuestionCmd questionCmd = new QuestionCmd()
-        questionCmd.guId = quizQuestion.id
-        questionCmd.question = quizQuestion.question
-        questionCmd.questionType = quizQuestion.questionType.toString()
-        questionCmd.optionsList = quizQuestion.quizQuestionOptions.collect{
-            convertToOptionCmd(it)
-        }
-        questionCmd.quizSelectedOption = quizQuestion.answer.option
-        questionCmd.createdDate = quizQuestion.createdDate
-        questionCmd.updateDate = quizQuestion.updatedDate
-        questionCmd.isQuestionActive = quizQuestion.isQuestionActive
-        return questionCmd
-    }
-
-    def convertToOptionCmd(QuizQuestionOption quizQuestionOptions){
-        QuizQuestionOptionCmd quizQuestionOptionCmd = new QuizQuestionOptionCmd()
-        quizQuestionOptionCmd.guId = quizQuestionOptions.id
-        quizQuestionOptionCmd.options = quizQuestionOptions.option
-        return  quizQuestionOptionCmd
-    }
+    quizDetailCmd.dateCreated = CanaryUtils.toEpoch(quiz.dateCreated)
+    quizDetailCmd.lastUpdated = CanaryUtils.toEpoch(quiz.lastUpdated)
+    quizDetailCmd
+  }
 
 }

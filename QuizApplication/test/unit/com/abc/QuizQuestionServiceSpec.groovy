@@ -6,15 +6,15 @@ import spock.lang.Specification
 /**
  * See the API for {@link grails.test.mixin.services.ServiceUnitTestMixin} for usage instructions
  */
-@TestFor(QuestionService)
-class QuestionServiceSpec extends Specification {
+@TestFor(QuizQuestionService)
+class QuizQuestionServiceSpec extends Specification {
 
-    def setup() {
-    }
+  def setup() {
+  }
 
-    def cleanup() {
-    }
+  def cleanup() {
+  }
 
-    void "test something"() {
-    }
+  void "test something"() {
+  }
 }

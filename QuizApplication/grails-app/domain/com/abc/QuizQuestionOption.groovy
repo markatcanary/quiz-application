@@ -2,10 +2,10 @@ package com.abc
 
 class QuizQuestionOption {
 
-    static belongsTo = [quizQuestion: QuizQuestion]
-    static constraints = {
-        option nullable: true
-    }
+  static belongsTo = [quizQuestion: QuizQuestion]
+  static constraints = {
+    name nullable: true
+  }
 
-    String option
+  String name
 }

@@ -3,113 +3,92 @@ package com.abc
 import grails.converters.JSON
 
 class QuizController {
-    QuizService quizService
+  def beforeInterceptor = [action: this.&load]
 
-    def index() {}
+  QuizService quizService
 
-    def show = {
-        Tenant tenant = Tenant.findByName("VC")
-        def quizResult
-        if(params.id){
-            quizResult = quizService.getQuizById(Long.valueOf(params.id), tenant)
-        } else {
-            def includesList = getIncludeParams(params)
-            String include = includesList.size() > 0 ? includesList[0] : null
-            quizResult = quizService.getQuizList(include, tenant)
-        }
-        render quizResult as JSON
+  def index() {}
+
+  def show = {
+    Tenant tenant = Tenant.findByName("VC")
+    def quizResult
+    if (params.id) {
+      quizResult = quizService.getQuizDetails(Long.valueOf(params.id), tenant)
+    } else {
+      def include = CanaryUtils.getIncludeParamsString(params)
+      quizResult = quizService.getQuizList(include, tenant)
     }
+    render quizResult as JSON
+  }
 
-    def save = {
-        def jsonObj = request.JSON
-        String quizName = getStringProperty(jsonObj, "name")
-        def tenant = Tenant.findByName("VC")
-        quizService.createQuiz(quizName, tenant)
-        def result = new SuccessCmd()
-        render result as JSON
-    }
+  def save = {
+    def jsonObj = request.JSON
+    InputQuizCmd inputQuizCmd = quizService.buildInputQuizCmd(jsonObj)
 
-    def update = {
-        def jsonObj = request.JSON
-        String quizName = getStringProperty(jsonObj, "name")
-        def tenant = Tenant.findByName("VC")
-        InputQuizCmd inputQuizCmd = new InputQuizCmd()
-        inputQuizCmd.guId = params.id
-        inputQuizCmd.name = quizName
-        quizService.updateQuiz(inputQuizCmd, tenant)
-        def result = new SuccessCmd()
-        render result as JSON
-    }
+    def result = quizService.createQuiz(inputQuizCmd, params.tenant)
+    render result as JSON
+  }
 
-    def delete = {
-        if (params.id != null) {
-            def tenant = Tenant.findByName("VC")
-            InputQuizCmd inputQuizCmd = new InputQuizCmd()
-            inputQuizCmd.guId = params.id
-            def deleteQuiz = quizService.deleteQuiz(inputQuizCmd, tenant)
-            render deleteQuiz
-        }
-    }
+  def update = {
+    def jsonObj = request.JSON
+    InputQuizCmd inputQuizCmd = quizService.buildInputQuizCmd(jsonObj)
+    def result = quizService.updateQuiz(params.quiz, inputQuizCmd)
+    render result as JSON
+  }
 
-    static String getStringProperty(def jsonObj, String property) {
-        String value
-        if (jsonObj.containsKey(property)) {
-            value = jsonObj[property]
-            if (!value || value == "" || value.isEmpty()) {
-                value = null
-            }
-            return value
-        }
-        return value
+  def delete = {
+    if (params.id != null) {
+      def deleteQuiz = quizService.deleteQuiz(params.quiz)
+      render deleteQuiz
     }
+  }
 
-    def getIncludeParams(params) {
-        def includes = []
-        if (params.containsKey('include')) {
-            includes = params.include.split(",")
-        }
-        return includes
+  private load() {
+    Tenant tenant = Tenant.findByName("VC")
+    params.tenant = tenant
+    if(params.id) {
+      params.quiz = quizService.getQuiz(params.id, tenant)
     }
+  }
 }
 
-class SuccessCmd{
-    String success = "Success"
+class QuizDetailCmd {
+  String guId
+  String name
+  String desc
+  boolean isActive
+  List<QuestionCmd> questionList
+  def dateCreated
+  def lastUpdated
 }
 
-class QuizResultCmdById {
-    String guId
-    String name
-    List<QuestionCmd> questionList
-    Date createdDate
-    Date updateDate
-    boolean isQuizActive
-}
-
-class QuizResultCmd {
-    String guId
-    String name
-    Date createdDate
-    Date updateDate
-    boolean isQuizActive
+class QuizListCmd {
+  String guId
+  String name
+  String desc
+  boolean isActive
+  def dateCreated
+  def lastUpdated
 }
 
 class QuestionCmd {
-    String guId
-    String question
-    String questionType
-    List<QuizQuestionOption> optionsList
-    String quizSelectedOption
-    Date createdDate
-    Date updateDate
-    boolean isQuestionActive
+  String guId
+  String name
+  String questionType
+  boolean isActive
+  List<QuizQuestionOptionCmd> optionsList
+  QuizQuestionOptionCmd answer
+  def dateCreated
+  def lastUpdated
 }
 
 class QuizQuestionOptionCmd {
-    String guId
-    String options
+  String guId
+  String name
 }
 
-class InputQuizCmd{
-    String guId
-    String name
+class InputQuizCmd {
+  String name
+  String desc
+  boolean isActive
 }

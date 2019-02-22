@@ -1,11 +1,11 @@
 package com.abc
 
 class Tenant {
-    static hasMany = [quiz : Quiz, contacts : Contact]
+  static hasMany = [quiz: Quiz, contacts: Contact]
 
-    static constraints = {
-        name nullable:false
-    }
+  static constraints = {
+    name nullable: false
+  }
 
-    String name
+  String name
 }

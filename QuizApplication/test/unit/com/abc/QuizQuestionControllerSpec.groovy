@@ -6,15 +6,15 @@ import spock.lang.Specification
 /**
  * See the API for {@link grails.test.mixin.web.ControllerUnitTestMixin} for usage instructions
  */
-@TestFor(QuestionController)
-class QuestionControllerSpec extends Specification {
+@TestFor(QuizQuestionController)
+class QuizQuestionControllerSpec extends Specification {
 
-    def setup() {
-    }
+  def setup() {
+  }
 
-    def cleanup() {
-    }
+  def cleanup() {
+  }
 
-    void "test something"() {
-    }
+  void "test something"() {
+  }
 }

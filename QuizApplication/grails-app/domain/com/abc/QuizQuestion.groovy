@@ -1,26 +1,25 @@
 package com.abc
 
 class QuizQuestion {
-    enum QuestionType {
-        TrueFalse, MultiChoice
-    }
+  enum QuestionType {
+    TrueFalse, MultiChoice
+  }
 
-    static belongsTo = [quiz :Quiz]
-    static hasMany = [quizQuestionOptions : QuizQuestionOption]
-    static mapping = {
-        question sqlType: "text"
-    }
-    static constraints = {
-        questionType nullable: false
-        answer nullable: true
-    }
+  static belongsTo = [quiz: Quiz]
+  static mapping = {
+    name sqlType: "text"
+  }
+  static constraints = {
+    questionType nullable: false
+    answer nullable: true
+  }
+  static hasMany = [options: QuizQuestionOption]
 
-    QuestionType questionType
-    String question
+  QuestionType questionType
+  QuizQuestionOption answer
+  String name
+  boolean isActive = true
 
-//    QuizQuestionOption questionOptions
-    QuizQuestionOption answer
-    Date createdDate
-    Date updatedDate
-    boolean isQuestionActive
+  Date dateCreated
+  Date lastUpdated
 }
