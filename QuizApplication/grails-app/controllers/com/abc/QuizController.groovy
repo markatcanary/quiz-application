@@ -10,13 +10,12 @@ class QuizController {
   def index() {}
 
   def show = {
-    Tenant tenant = Tenant.findByName("VC")
     def quizResult
     if (params.id) {
-      quizResult = quizService.getQuizDetails(Long.valueOf(params.id), tenant)
+      quizResult = quizService.getQuizDetails(Long.valueOf(params.id), params.tenant)
     } else {
       def include = CanaryUtils.getIncludeParamsString(params)
-      quizResult = quizService.getQuizList(include, tenant)
+      quizResult = quizService.getQuizList(include, params.tenant)
     }
     render quizResult as JSON
   }
